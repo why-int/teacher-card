@@ -1,13 +1,8 @@
+from src.gui_app import run_app
+
+
 def main() -> None:
-    """Description.
-
-    Args:
-        arg: Description
-
-    Returns:
-        ReturnType: Description
-    """
-    pass
+    run_app()
 
 
 if __name__ == "__main__":
