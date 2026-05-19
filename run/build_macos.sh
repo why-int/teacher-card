@@ -16,13 +16,21 @@ elif [[ -f "assets/app_icon.png" ]]; then
   ICON_ARG="assets/app_icon.png"
 fi
 
+DATA_ARGS=(--add-data "assets:assets")
+if [[ -f "Пример.xlsx" ]]; then
+  DATA_ARGS+=(--add-data "Пример.xlsx:templates")
+fi
+if [[ -f "Шаблон и пример.xlsm" ]]; then
+  DATA_ARGS+=(--add-data "Шаблон и пример.xlsm:templates")
+fi
+
 if [[ -n "${ICON_ARG}" ]]; then
   pyinstaller \
     --noconfirm \
     --clean \
     --windowed \
     --name "ExcelDataViewer" \
-    --add-data "assets:assets" \
+    "${DATA_ARGS[@]}" \
     --icon "${ICON_ARG}" \
     main.py
 else
@@ -31,7 +39,7 @@ else
     --clean \
     --windowed \
     --name "ExcelDataViewer" \
-    --add-data "assets:assets" \
+    "${DATA_ARGS[@]}" \
     main.py
 fi
 

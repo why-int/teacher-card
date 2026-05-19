@@ -18,13 +18,21 @@ if exist assets\app_icon.ico (
     )
 )
 
+set DATA_ARGS=--add-data "assets;assets"
+if exist "Пример.xlsx" (
+    set DATA_ARGS=%DATA_ARGS% --add-data "Пример.xlsx;templates"
+)
+if exist "Шаблон и пример.xlsm" (
+    set DATA_ARGS=%DATA_ARGS% --add-data "Шаблон и пример.xlsm;templates"
+)
+
 pyinstaller ^
   --noconfirm ^
   --clean ^
   --onefile ^
   --windowed ^
   --name ExcelDataViewer ^
-  --add-data "assets;assets" ^
+  %DATA_ARGS% ^
   %ICON_ARG% ^
   main.py
 

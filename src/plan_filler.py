@@ -30,6 +30,32 @@ PLAN_COLUMNS: list[tuple[str, str]] = [
 ]
 
 
+@dataclass(frozen=True)
+class RupLayout:
+    subject: int = 0
+    group: int = 1
+    budget: int = 2
+    sem1_hours: int = 7
+    sem2_hours: int = 19
+    total_hours: int = 28
+    teacher: int = 30
+    payment_type: int = 31
+    sep: int = 32
+    oct_: int = 33
+    nov: int = 34
+    dec: int = 35
+    jan: int = 37
+    feb: int = 38
+    mar: int = 39
+    apr: int = 40
+    may: int = 41
+    jun: int = 42
+
+
+RUP = RupLayout()
+TABLE_COLUMNS = [column for column, _ in PLAN_COLUMNS]
+
+
 @dataclass
 class PlanRecord:
     subject: str
@@ -91,10 +117,10 @@ def _as_number_or_none(value: Any) -> float | int | None:
 
 
 def _is_data_row(row: pd.Series) -> bool:
-    subject = _clean_text(row.iloc[0])
-    group = _clean_text(row.iloc[1])
-    teacher = _clean_text(row.iloc[30])
-    payment_type = _clean_text(row.iloc[31]).lower()
+    subject = _clean_text(row.iloc[RUP.subject])
+    group = _clean_text(row.iloc[RUP.group])
+    teacher = _clean_text(row.iloc[RUP.teacher])
+    payment_type = _clean_text(row.iloc[RUP.payment_type]).lower()
     if not subject or not group or not teacher:
         return False
     if subject.lower().startswith("итого"):
@@ -128,59 +154,58 @@ def _sheet_name_from_teacher(teacher_name: str) -> str:
 
 
 def _records_to_dataframe(records: list[PlanRecord]) -> pd.DataFrame:
-    data = []
-    for record in records:
-        data.append(
-            {
-                "subject": record.subject,
-                "group": record.group,
-                "budget": record.budget,
-                "total_hours": record.total_hours,
-                "sem1_hours": record.sem1_hours,
-                "sem2_hours": record.sem2_hours,
-                "sep": record.sep,
-                "oct_": record.oct_,
-                "nov": record.nov,
-                "dec": record.dec,
-                "jan": record.jan,
-                "feb": record.feb,
-                "mar": record.mar,
-                "apr": record.apr,
-                "may": record.may,
-                "jun": record.jun,
-            }
-        )
-    return pd.DataFrame(data, columns=[column for column, _ in PLAN_COLUMNS])
+    data = [
+        {
+            "subject": record.subject,
+            "group": record.group,
+            "budget": record.budget,
+            "total_hours": record.total_hours,
+            "sem1_hours": record.sem1_hours,
+            "sem2_hours": record.sem2_hours,
+            "sep": record.sep,
+            "oct_": record.oct_,
+            "nov": record.nov,
+            "dec": record.dec,
+            "jan": record.jan,
+            "feb": record.feb,
+            "mar": record.mar,
+            "apr": record.apr,
+            "may": record.may,
+            "jun": record.jun,
+        }
+        for record in records
+    ]
+    return pd.DataFrame(data, columns=TABLE_COLUMNS)
+
+
+def _record_from_row(row: pd.Series) -> PlanRecord:
+    return PlanRecord(
+        subject=_clean_text(row.iloc[RUP.subject]),
+        group=_clean_text(row.iloc[RUP.group]),
+        budget=_clean_text(row.iloc[RUP.budget]).lower(),
+        teacher=_clean_text(row.iloc[RUP.teacher]),
+        total_hours=_as_number_or_none(row.iloc[RUP.total_hours]),
+        sem1_hours=_as_number_or_none(row.iloc[RUP.sem1_hours]),
+        sem2_hours=_as_number_or_none(row.iloc[RUP.sem2_hours]),
+        sep=_as_number_or_none(row.iloc[RUP.sep]),
+        oct_=_as_number_or_none(row.iloc[RUP.oct_]),
+        nov=_as_number_or_none(row.iloc[RUP.nov]),
+        dec=_as_number_or_none(row.iloc[RUP.dec]),
+        jan=_as_number_or_none(row.iloc[RUP.jan]),
+        feb=_as_number_or_none(row.iloc[RUP.feb]),
+        mar=_as_number_or_none(row.iloc[RUP.mar]),
+        apr=_as_number_or_none(row.iloc[RUP.apr]),
+        may=_as_number_or_none(row.iloc[RUP.may]),
+        jun=_as_number_or_none(row.iloc[RUP.jun]),
+    )
 
 
 def _load_records_from_rup(rup_path: Path) -> list[PlanRecord]:
     raw_df = pd.read_excel(rup_path, sheet_name=0, header=None)
     records: list[PlanRecord] = []
-
     for _, row in raw_df.iterrows():
-        if not _is_data_row(row):
-            continue
-        records.append(
-            PlanRecord(
-                subject=_clean_text(row.iloc[0]),
-                group=_clean_text(row.iloc[1]),
-                budget=_clean_text(row.iloc[2]).lower(),
-                teacher=_clean_text(row.iloc[30]),
-                total_hours=_as_number_or_none(row.iloc[28]),
-                sem1_hours=_as_number_or_none(row.iloc[7]),
-                sem2_hours=_as_number_or_none(row.iloc[19]),
-                sep=_as_number_or_none(row.iloc[32]),
-                oct_=_as_number_or_none(row.iloc[33]),
-                nov=_as_number_or_none(row.iloc[34]),
-                dec=_as_number_or_none(row.iloc[35]),
-                jan=_as_number_or_none(row.iloc[37]),
-                feb=_as_number_or_none(row.iloc[38]),
-                mar=_as_number_or_none(row.iloc[39]),
-                apr=_as_number_or_none(row.iloc[40]),
-                may=_as_number_or_none(row.iloc[41]),
-                jun=_as_number_or_none(row.iloc[42]),
-            )
-        )
+        if _is_data_row(row):
+            records.append(_record_from_row(row))
     return records
 
 
@@ -217,13 +242,6 @@ def _find_label_row(ws: Worksheet, label: str, column: int = 1) -> int:
     raise ValueError(f"Не найдена строка с меткой '{label}' в листе '{ws.title}'.")
 
 
-def _replace_year_in_header(text: str, year_start: str, year_end: str) -> str:
-    pattern = r"(20\d{2})\s*-\s*(20\d{2})"
-    if re.search(pattern, text):
-        return re.sub(pattern, f"{year_start} - {year_end}", text)
-    return text
-
-
 def _sum_values(values: list[float | int | None]) -> float:
     total = 0.0
     for value in values:
@@ -246,6 +264,28 @@ def _copy_row_style(ws: Worksheet, src_row: int, dst_row: int, max_col: int) -> 
             dst.border = src.border.copy()
             dst.alignment = src.alignment.copy()
             dst.protection = src.protection.copy()
+
+
+def _write_record_row(ws: Worksheet, row_idx: int, record: PlanRecord) -> None:
+    ws.cell(row_idx, 1).value = record.subject
+    ws.cell(row_idx, 2).value = record.group
+    ws.cell(row_idx, 3).value = record.total_hours
+    ws.cell(row_idx, 11).value = record.total_hours
+    ws.cell(row_idx, 12).value = record.sem1_hours
+    ws.cell(row_idx, 14).value = record.sem2_hours
+    ws.cell(row_idx, 16).value = record.sep
+    ws.cell(row_idx, 17).value = record.oct_
+    ws.cell(row_idx, 18).value = record.nov
+    ws.cell(row_idx, 19).value = record.dec
+    ws.cell(row_idx, 20).value = f"=SUM(P{row_idx}:S{row_idx})"
+    ws.cell(row_idx, 21).value = record.jan
+    ws.cell(row_idx, 22).value = record.feb
+    ws.cell(row_idx, 23).value = record.mar
+    ws.cell(row_idx, 24).value = record.apr
+    ws.cell(row_idx, 25).value = record.may
+    ws.cell(row_idx, 26).value = record.jun
+    ws.cell(row_idx, 27).value = f"=SUM(U{row_idx}:Z{row_idx})"
+    ws.cell(row_idx, 28).value = f"=T{row_idx}+AA{row_idx}"
 
 
 def _dataframe_to_records(df: pd.DataFrame, teacher: str) -> list[PlanRecord]:
@@ -308,26 +348,7 @@ def _write_teacher_sheet(
             ws.cell(row_idx, col_idx).value = None
 
     for i, record in enumerate(records):
-        row_idx = data_start + i
-        ws.cell(row_idx, 1).value = record.subject
-        ws.cell(row_idx, 2).value = record.group
-        ws.cell(row_idx, 3).value = record.total_hours
-        ws.cell(row_idx, 11).value = record.total_hours
-        ws.cell(row_idx, 12).value = record.sem1_hours
-        ws.cell(row_idx, 14).value = record.sem2_hours
-        ws.cell(row_idx, 16).value = record.sep
-        ws.cell(row_idx, 17).value = record.oct_
-        ws.cell(row_idx, 18).value = record.nov
-        ws.cell(row_idx, 19).value = record.dec
-        ws.cell(row_idx, 20).value = f"=SUM(P{row_idx}:S{row_idx})"
-        ws.cell(row_idx, 21).value = record.jan
-        ws.cell(row_idx, 22).value = record.feb
-        ws.cell(row_idx, 23).value = record.mar
-        ws.cell(row_idx, 24).value = record.apr
-        ws.cell(row_idx, 25).value = record.may
-        ws.cell(row_idx, 26).value = record.jun
-        ws.cell(row_idx, 27).value = f"=SUM(U{row_idx}:Z{row_idx})"
-        ws.cell(row_idx, 28).value = f"=T{row_idx}+AA{row_idx}"
+        _write_record_row(ws, data_start + i, record)
 
     data_end = data_start + len(records) - 1
     if data_end < data_start:

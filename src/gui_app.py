@@ -30,12 +30,13 @@ from PySide6.QtWidgets import (
 )
 
 from src.plan_filler import PLAN_COLUMNS, build_cards_workbook, load_teacher_tables_from_rup
-
-
-def _resource_path(relative_path: str) -> Path:
-    if hasattr(sys, "_MEIPASS"):
-        return Path(getattr(sys, "_MEIPASS")) / relative_path
-    return Path.cwd() / relative_path
+from src.app_config import (
+    APP_TITLE,
+    WINDOW_TITLE,
+    default_save_dir,
+    find_template_file,
+    resource_path,
+)
 
 
 def _to_cell_value(value: Any) -> Any:
@@ -165,11 +166,11 @@ class EditableDataFrameModel(QAbstractTableModel):
 class ExcelViewerWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("Teacher Card Builder")
+        self.setWindowTitle(WINDOW_TITLE)
         self.resize(1320, 800)
         self.setMinimumSize(1020, 660)
 
-        icon_path = _resource_path("assets/app_icon.png")
+        icon_path = resource_path("assets/app_icon.png")
         if icon_path.exists():
             self.setWindowIcon(QIcon(str(icon_path)))
 
@@ -189,7 +190,7 @@ class ExcelViewerWindow(QMainWindow):
         root_layout.setContentsMargins(18, 18, 18, 14)
         root_layout.setSpacing(12)
 
-        title = QLabel("Teacher Card Builder")
+        title = QLabel(APP_TITLE)
         title.setObjectName("titleLabel")
 
         subtitle = QLabel(
@@ -383,7 +384,7 @@ class ExcelViewerWindow(QMainWindow):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Выберите файл РУП",
-            str(Path.home()),
+            str(default_save_dir()),
             "Excel files (*.xlsx *.xlsm *.xls);;All files (*.*)",
         )
         if not file_path:
@@ -464,12 +465,12 @@ class ExcelViewerWindow(QMainWindow):
             self._show_error("Нет преподавателей", "Сначала выберите преподавателей.")
             return
 
-        template_path = self._find_template_in_project()
+        template_path = find_template_file()
         if template_path is None:
             self._show_error(
                 "Нет шаблона",
-                "Не найден шаблон в проекте. Ожидается файл 'Пример.xlsx' "
-                "или 'Шаблон и пример.xlsm' в корне проекта.",
+                "Не найден шаблон. Ожидается файл 'Пример.xlsx' "
+                "или 'Шаблон и пример.xlsm' рядом с программой.",
             )
             return
 
@@ -477,7 +478,7 @@ class ExcelViewerWindow(QMainWindow):
         output_file, _ = QFileDialog.getSaveFileName(
             self,
             "Сохранить карточки как",
-            str(template_path.parent / default_out),
+            str(default_save_dir() / default_out),
             "Excel files (*.xlsx *.xlsm)",
         )
         if not output_file:
@@ -503,20 +504,10 @@ class ExcelViewerWindow(QMainWindow):
             "Карточки созданы и сохранены:\n" + "\n".join(lines),
         )
 
-    def _find_template_in_project(self) -> Path | None:
-        candidates = [
-            Path.cwd() / "Пример.xlsx",
-            Path.cwd() / "Шаблон и пример.xlsm",
-        ]
-        for path in candidates:
-            if path.exists() and path.is_file():
-                return path
-        return None
-
 
 def run_app() -> None:
     app = QApplication(sys.argv)
-    app.setApplicationName("Teacher Card Builder")
+    app.setApplicationName(APP_TITLE)
     window = ExcelViewerWindow()
     window.show()
     sys.exit(app.exec())
