@@ -1,0 +1,53 @@
+name: Build Desktop Apps
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build Windows EXE
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: run\build_windows.bat
+
+      - name: Build macOS APP
+        if: matrix.os == 'macos-latest'
+        run: |
+          chmod +x run/build_macos.sh
+          ./run/build_macos.sh
+
+      - name: Upload Windows artifact
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ExcelDataViewer-windows
+          path: dist/ExcelDataViewer.exe
+          if-no-files-found: error
+
+      - name: Upload macOS artifact
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ExcelDataViewer-macos
+          path: dist/ExcelDataViewer.app
+          if-no-files-found: error

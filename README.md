@@ -18,6 +18,17 @@
 
 Важно: `.exe` собирается на Windows, `.app` собирается на macOS.
 
+## Готовые файлы без локальной сборки
+
+Если не хочешь собирать локально:
+
+1. Загрузи проект в GitHub.
+2. Открой вкладку `Actions`.
+3. Запусти workflow `Build Desktop Apps` (или просто сделай push в `main`).
+4. После завершения скачай артефакты:
+   - `ExcelDataViewer-windows` (внутри `.exe`)
+   - `ExcelDataViewer-macos` (внутри `.app`)
+
 ## Сборка
 
 ### Windows
