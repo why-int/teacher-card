@@ -36,6 +36,11 @@ jobs:
           chmod +x run/build_macos.sh
           ./run/build_macos.sh
 
+      - name: Pack macOS DMG
+        if: matrix.os == 'macos-latest'
+        run: |
+          hdiutil create -volname "ExcelDataViewer" -srcfolder "dist/ExcelDataViewer.app" -ov -format UDZO "dist/ExcelDataViewer.dmg"
+
       - name: Upload Windows artifact
         if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
@@ -49,5 +54,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ExcelDataViewer-macos
-          path: dist/ExcelDataViewer.app
+          path: dist/ExcelDataViewer.dmg
           if-no-files-found: error

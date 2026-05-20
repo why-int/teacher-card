@@ -27,7 +27,7 @@
 3. Запусти workflow `Build Desktop Apps` (или просто сделай push в `main`).
 4. После завершения скачай артефакты:
    - `ExcelDataViewer-windows` (внутри `.exe`)
-   - `ExcelDataViewer-macos` (внутри `.app`)
+   - `ExcelDataViewer-macos` (внутри `.dmg`)
 
 ## Сборка
 
